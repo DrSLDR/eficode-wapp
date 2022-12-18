@@ -11,6 +11,10 @@ a Google Cloud k8s cluster and deploy the app to it.
   documentation](https://developer.hashicorp.com/terraform/tutorials/gcp-get-started/google-cloud-platform-build#set-up-gcp),
   bullet 3 for instructions on exactly how to create that). The resultant JSON key
   should be stored in `cloud/gcp_key.json`, relative to the repository root.
+* The following environment variables set:
+  * `TF_VAR_GCS_PROJECT`: name of your GCS project
+  * Optionally:
+    * `TF_VAR_GCS_REGION`: region to work in for GCS (`us-west1` by default)
 
 **Note:** Both Terraform definitions use local state storage. This is done for the
 purposes of this evaluation only --- for _any_ shared environment, the TF State should
