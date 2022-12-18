@@ -11,3 +11,7 @@ Docker registry) instance with appropriate credentials, in order to pull the Doc
 images from somewhere. The `instance` variant does not require that --- indeed, it
 doesn't provision the instance at all, but instead defers that to the Ansible component,
 which can deploy the Docker images from the local machine using `docker export`.
+
+**Note:** Both Terraform definitions use local state storage. This is done for the
+purposes of this evaluation only --- for _any_ shared environment, the TF State should
+be placed in a shared location.
