@@ -54,4 +54,5 @@ ansible-playbook -i inventory.yml provision.yml
 5. Creates a new user and grants it sudo
 6. Flush registered handlers (possibly rebooting)
 7. Installs Docker
-8. Optionally installs Docker Compose
+   1. Optionally also installs Docker Compose
+   2. Adds our users to the Docker group
