@@ -19,3 +19,25 @@ provider "google" {
   region  = var.GCS_REGION
   zone    = var.GCS_ZONE
 }
+
+# Create our Compute instance
+resource "google_compute_instance" "default" {
+  name         = "test-instance"
+  machine_type = "e2-micro" # Within the Free tier
+
+  tags = ["test", "dev"]
+
+  boot_disk {
+    initialize_params {
+      image = "ubuntu-2204-lts"
+    }
+  }
+
+  network_interface {
+    network = "default"
+
+    access_config {
+      network_tier = "PREMIUM"
+    }
+  }
+}
