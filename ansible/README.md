@@ -40,3 +40,6 @@ little beyond the scope of what we're trying to do here.
 ### Synopsis
 
 1. Perform a general system update
+2. Installs [neofetch](https://github.com/dylanaraps/neofetch), patches it, and sets it
+   as systemwide MOTD.
+3. Installs and configures UFW

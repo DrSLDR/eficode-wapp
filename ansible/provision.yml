@@ -1,16 +1,126 @@
----
 - name: Provision the server
   hosts: gcp
 
   handlers:
-  - name: Reboot the server
-    ansible.builtin.reboot:
+    - name: Reboot the server
+      ansible.builtin.reboot:
+
+    - name: Start UFW
+      become: true
+      ansible.builtin.expect:
+        command: ufw enable
+        responses:
+          "Proceed with operation": y
 
   tasks:
-  - name: General system update
-    become: true
-    ansible.builtin.apt:
-      update_cache: true
-      upgrade: true
-    notify:
-      - Reboot the server
+    - name: General system update
+      become: true
+      ansible.builtin.apt:
+        update_cache: true
+        upgrade: true
+      notify:
+        - Reboot the server
+
+    - name: Neofetch block
+      block: # Taken from my install_neofetch role. This is absolutely not necessary, but it wouldn't feel like "my" server without it.
+        - name: Ensure git is present
+          become: true
+          ansible.builtin.apt:
+            name: git
+            state: present
+
+        - name: Prepare directory for neofetch
+          become: true
+          ansible.builtin.file:
+            path: /opt/neofetch
+            state: directory
+            mode: 0755
+
+        - name: Get the Neofetch code
+          become: true
+          ansible.builtin.git:
+            dest: /opt/neofetch
+            repo: https://github.com/dylanaraps/neofetch.git
+            version: "7.1.0"
+            force: true
+
+        - name: Copy neofetch script
+          become: true
+          ansible.builtin.command:
+            chdir: /opt/neofetch
+            cmd: cp neofetch neofetch-cust
+            creates: /opt/neofetch/neofetch-cust
+
+        - name: Patch the 'title' function
+          become: true
+          ansible.builtin.lineinfile:
+            path: /opt/neofetch/neofetch-cust
+            search_string: "{{ item.search }}"
+            line: "{{ item.line }}"
+          loop:
+            - {
+                search: "    title=${title_color}${bold}${user}",
+                line: "    title=${title_color}${bold}${hostname}",
+              }
+            - {
+                search: "length=$((${",
+                line: '{% raw %}    length="$((${{ ''{#'' }}hostname}))"{% endraw %}',
+              }
+
+        - name: Link Neofetch into /usr/bin
+          become: true
+          ansible.builtin.file:
+            state: link
+            path: /usr/bin/neofetch
+            src: /opt/neofetch/neofetch-cust
+
+        - name: Enumerate current MOTD scripts
+          ansible.builtin.command:
+            cmd: ls /etc/update-motd.d
+          register: modt_scripts
+          changed_when: false
+
+        - name: Disable current motd script
+          become: true
+          ansible.builtin.file:
+            path: "/etc/update-motd.d/{{ item }}"
+            mode: 0644
+          loop: "{{ modt_scripts.stdout_lines | difference(neofetch_files) }}"
+
+        - name: Check if static MOTD is present
+          ansible.builtin.stat:
+            path: /etc/motd
+          register: static_motd
+
+        - name: Remove static MOTD
+          become: true
+          ansible.builtin.command:
+            cmd: mv /etc/motd /etc/motd.disabled
+          when: static_motd.stat.exists
+
+        - name: Install new MOTD script
+          become: true
+          ansible.builtin.copy:
+            src: files/
+            dest: /etc/update-motd.d/
+            mode: 0755
+
+    - name: Ensure UFW is installed
+      become: true
+      ansible.builtin.apt:
+        name:
+          - ufw
+        state: present
+
+    - name: Set up UFW rules
+      become: true
+      ansible.builtin.command:
+        cmd: "ufw allow {{ item }}/tcp"
+      register: ufw_rules
+      changed_when: "'Skipping' not in ufw_rules.stdout"
+      loop:
+        - 22
+        - 80
+        - 443
+      notify:
+        - Start UFW
