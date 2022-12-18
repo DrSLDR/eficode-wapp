@@ -124,3 +124,55 @@
         - 443
       notify:
         - Start UFW
+
+    - name: Sudo group block
+      block: # Adapted from my "ensure_sudo_group" role. Can be used to create user groups allowing either passworded or non-password sudo. In this case, we only want passworded sudo access.
+        - name: Check if a sudo group is already defined
+          become: true
+          ansible.builtin.shell:
+            cmd: cat /etc/sudoers | grep ^%sudo
+          changed_when: false
+          failed_when: false
+          register: deb_grep
+
+        - name: Sudo group does not exist
+          block:
+            - name: Create the group
+              become: true
+              ansible.builtin.group:
+                name: "sudo"
+                state: present
+                system: true
+
+            - name: Install the sudoers.d file
+              become: true
+              ansible.builtin.template:
+                dest: /etc/sudoers.d/090_ans-sudogroup
+                src: templates/sudoers
+                mode: 0440
+                validate: /usr/sbin/visudo -cf %s
+              vars:
+                group: "sudo"
+          when: not deb_grep.rc == 0
+
+        - name: Register the group name
+          ansible.builtin.set_fact:
+            sudo_group: "sudo"
+
+    - name: Create a user account for examination purposes
+      become: true
+      ansible.builtin.user:
+        name: "eficode"
+        state: present
+        password: "$6$CPcj9wyH/kerDPD.$bUP4nHJGKcDJP0le5TOm9vhXMzDFdJW92M381wDMmx7FA0x2obTDAX683Ly61s22ZTGKimXequRt5JTKsEAuB0"
+        # I'm aware that a hardcoded password hash like this causes security problems,
+        # but in this inscance, I'm willing to accept them. This server isn't intended
+        # to be long-lived.
+
+    - name: Grant sudoer rights
+      become: true
+      ansible.builtin.user:
+        name: "eficode"
+        append: true
+        groups:
+          - "{{ sudo_group }}"
