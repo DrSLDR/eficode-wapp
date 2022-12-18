@@ -5,6 +5,10 @@ and, later, deploy our weather app. I just want to state for the record that the
 would normally have done this is to write one large playbook with multiple, tagged
 plays, but I will follow the letter of the instructions.
 
+**General note:** I _normally_ maintain a small library of roles that do often repeated
+tasks. Since I don't host them publicly anywhere, I will just inline their functionality
+into the playbook here, marking where they start and end.
+
 ## Inventory
 
 **Note:** The inventory is currently set up in a very simple manner. Under normal
@@ -22,3 +26,17 @@ information:
   notices.
 * The `domain` for which to request a certificate (and configure `nginx`).
 * The `ansible_host` for the `test-instance` that we want to operate on.
+
+## Provisioning playbook
+
+The `provision.yml` file contains the play which provisions a new (Ubuntu) server to get
+it ready to host our weather app. The point of this playbook is to install and configure
+system users and core system applications.
+
+**Note:** Under normal circumstances, the first step in my Ansible work would be to set
+up an `ansible` user to be used specifically for all Ansible access. However, that's a
+little beyond the scope of what we're trying to do here.
+
+### Synopsis
+
+1. Perform a general system update

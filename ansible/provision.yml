@@ -1,0 +1,16 @@
+---
+- name: Provision the server
+  hosts: gcp
+
+  handlers:
+  - name: Reboot the server
+    ansible.builtin.reboot:
+
+  tasks:
+  - name: General system update
+    become: true
+    ansible.builtin.apt:
+      update_cache: true
+      upgrade: true
+    notify:
+      - Reboot the server
