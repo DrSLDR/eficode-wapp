@@ -194,3 +194,52 @@
 
     - name: Flush the handlers, ensuring system is ready
       ansible.builtin.meta: flush_handlers
+
+    - name: Docker block
+      block: # Taken from my install_docker role. Surprisingly common process, installing docker.
+        - name: Install Docker prerequisites
+          become: true
+          ansible.builtin.apt:
+            name:
+              - ca-certificates
+              - curl
+              - gnupg
+              - lsb-release
+            state: present
+            update_cache: true
+
+        - name: Fetch the key
+          ansible.builtin.uri:
+            url: https://download.docker.com/linux/ubuntu/gpg
+            return_content: true
+          register: keydata
+
+        - name: Install Docker GPG key
+          become: true
+          ansible.builtin.shell:
+            cmd: >-
+              echo '{{ keydata.content }}' |
+              gpg --dearmor -o /usr/share/keyrings/docker-archive-keyring.gpg
+            creates: /usr/share/keyrings/docker-archive-keyring.gpg
+
+        - name: Install Docker Apt list
+          become: true
+          ansible.builtin.shell:
+            cmd: >-
+              echo
+              "deb [arch=$(dpkg --print-architecture)
+              signed-by=/usr/share/keyrings/docker-archive-keyring.gpg]
+              https://download.docker.com/linux/ubuntu
+              $(lsb_release -cs) stable" |
+              tee /etc/apt/sources.list.d/docker.list > /dev/null
+            creates: /etc/apt/sources.list.d/docker.list
+
+        - name: Install the Docker engine
+          become: true
+          ansible.builtin.apt:
+            name:
+              - docker-ce
+              - docker-ce-cli
+              - containerd.io
+            state: present
+            update_cache: true

@@ -51,3 +51,4 @@ ansible-playbook -i inventory.yml provision.yml
 4. Creates/ensures a usergroup that allows sudo
 5. Creates a new user and grants it sudo
 6. Flush registered handlers (possibly rebooting)
+7. Installs Docker
