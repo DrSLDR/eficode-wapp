@@ -29,6 +29,11 @@
             name: git
             state: present
 
+        - name: Declare the neofetch files
+          ansible.builtin.set_fact:
+            neofetch_files:
+              - 20-neofetch
+
         - name: Prepare directory for neofetch
           become: true
           ansible.builtin.file:
@@ -101,9 +106,10 @@
         - name: Install new MOTD script
           become: true
           ansible.builtin.copy:
-            src: files/
-            dest: /etc/update-motd.d/
+            src: files/{{ item }}
+            dest: /etc/update-motd.d/{{ item }}
             mode: 0755
+          loop: "{{ neofetch_files }}"
 
     - name: Ensure UFW is installed
       become: true
