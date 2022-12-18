@@ -128,3 +128,12 @@ concentrate on core activities.*
   extra points.
 
 * Try to avoid any bugs or weirdness in the operating logic.
+
+---
+
+## Notes from DrSLDR
+
+Per your request, I am trying my hand at the Ansible, Docker, and (optionally) Cloud
+segments of this task. Each task will be given its own subdirectory, named accordingly,
+which will contain all necessary code and documentation, except where that wouldn't make
+sense (e.g. front-/backend Dockerfiles).
