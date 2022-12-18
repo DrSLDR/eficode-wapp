@@ -57,3 +57,4 @@ ansible-playbook -i inventory.yml provision.yml
    1. Optionally also installs Docker Compose
    2. Adds our users to the Docker group
 8. Installs nginx, for use as a proxy later
+9. Installs certbot

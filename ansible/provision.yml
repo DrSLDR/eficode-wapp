@@ -290,3 +290,42 @@
             name: nginx
             enabled: true
             state: started
+
+    - name: Snap block
+      block: # Taken from my install_snap role, prerequisite for installing certbot
+        - name: Install snapd
+          become: true
+          ansible.builtin.apt:
+            name: snapd
+            state: present
+
+        - name: Install the Snap Core
+          become: true
+          ansible.builtin.command:
+            cmd: snap install core
+          register: snap_core_install
+          changed_when: '"already installed" not in snap_core_install.stderr'
+
+        - name: Refresh the Snap Core
+          become: true
+          ansible.builtin.command:
+            cmd: snap refresh core
+          register: snap_core_refresh
+          changed_when: '"no updates available" not in snap_core_refresh.stderr'
+
+    - name: Certbot block
+      block: # Taken from my install_certbot role
+        - name: Install certbot
+          become: true
+          ansible.builtin.command:
+            cmd: snap install --classic certbot
+          register: snap_certbot
+          changed_when: '"already installed" not in snap_certbot.stderr'
+
+        - name: Link out the certbot executable
+          become: true
+          ansible.builtin.file:
+            path: /usr/bin/certbot
+            src: /snap/bin/certbot
+            state: link
+            mode: 0755
