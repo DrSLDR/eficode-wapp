@@ -35,6 +35,10 @@ In addition to the common requirements listed above, this variant requires:
   * `TF_VAR_GCP_SSH_KEYS`: SSH key metadata string (see [GCP
     Documentation](https://cloud.google.com/compute/docs/metadata/default-metadata-values#project-attributes-metadata)
     for details; defaults to my SSH key.)
+  * `TF_VAR_GCP_CE_TYPE`: Machine type of the Google Cloud Compute Engine instance (see
+    [GCP
+    Documentation](https://cloud.google.com/compute/docs/general-purpose-machines#e2-shared-core)
+    for details; defaults to `e2-micro`.)
 
 ### Usage
 
@@ -57,6 +61,9 @@ Verify that the Terraform plan looks right, then enter `yes` in order to start
 Terraform. After some time, Terraform will have finished, and will print out the IP you
 can use to connect to your new compute instance (assuming you have set the SSH keys
 string accordingly).
+
+Note that the above step may prompt for additional information. If it does that, make
+sure you have set all the required environment variables.
 
 Once you are done, you can tear down your instance by running
 ```
