@@ -23,7 +23,7 @@ provider "google" {
 # Create our Compute instance
 resource "google_compute_instance" "default" {
   name         = "test-instance"
-  machine_type = "e2-micro" # Within the Free tier
+  machine_type = var.GCP_CE_TYPE
 
   tags = ["test", "dev"]
 

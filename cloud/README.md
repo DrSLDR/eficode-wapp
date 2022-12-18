@@ -49,6 +49,21 @@ You can, if you so wish, validate the Terraform configuration by running
 terraform validate
 ```
 
+Then, in order to run Terraform, creating the compute instance, run
+```
+terraform apply
+```
+Verify that the Terraform plan looks right, then enter `yes` in order to start
+Terraform. After some time, Terraform will have finished, and will print out the IP you
+can use to connect to your new compute instance (assuming you have set the SSH keys
+string accordingly).
+
+Once you are done, you can tear down your instance by running
+```
+terraform destroy
+```
+again validating the plan, then confirming by entering `yes`.
+
 ## k8s
 
 Terraform variant which creates a _whatever the Google Cloud k8s thing is called_ and

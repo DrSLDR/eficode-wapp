@@ -12,6 +12,11 @@ variable "GCP_ZONE" {
   description = "Google Cloud Services Zone in the Region."
   default     = "us-west1-a"
 }
+variable "GCP_CE_TYPE" {
+  type        = string
+  description = "Google Cloud Compute Engine machine type. Note that only e2-micro is 'free' to use."
+  default     = "e2-micro"
+}
 variable "GCP_SSH_KEYS" {
   type        = string
   description = "SSH keys metadata string to be injected into the VM."
