@@ -8,3 +8,4 @@ all:
       hosts:
         test-instance:
           ansible_host: 35.233.173.198
+          development: true

@@ -26,6 +26,8 @@ information:
   notices.
 * The `domain` for which to request a certificate (and configure `nginx`).
 * The `ansible_host` for the `test-instance` that we want to operate on.
+* The `development` flag determines if Docker Compose should also be installed on the
+  server, so it can be used for Compose development.
 
 ## Provisioning playbook
 
@@ -52,3 +54,4 @@ ansible-playbook -i inventory.yml provision.yml
 5. Creates a new user and grants it sudo
 6. Flush registered handlers (possibly rebooting)
 7. Installs Docker
+8. Optionally installs Docker Compose

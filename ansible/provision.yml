@@ -243,3 +243,10 @@
               - containerd.io
             state: present
             update_cache: true
+
+    - name: Install Docker Compose if we're doing development
+      become: true
+      ansible.builtin.apt:
+        name: docker-compose-plugin
+        state: present
+      when: development
