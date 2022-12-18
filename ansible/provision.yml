@@ -12,6 +12,12 @@
         responses:
           "Proceed with operation": y
 
+    - name: Reload nginx
+      become: true
+      ansible.builtin.systemd:
+        name: nginx
+        state: reloaded
+
   tasks:
     - name: General system update
       become: true
@@ -261,3 +267,26 @@
       loop:
         - "sldr"
         - "eficode"
+
+    - name: Nginx block
+      block: # Taken from my install_nginx role. Also a very common task. Normally, whether to disable the default site is an option - here I hardcode it to yes.
+        - name: Install nginx
+          become: true
+          ansible.builtin.apt:
+            name: nginx
+            state: present
+
+        - name: Disable default site
+          become: true
+          ansible.builtin.file:
+            path: /etc/nginx/sites-enabled/default
+            state: absent
+          notify:
+            - Reload nginx
+
+        - name: Ensure nginx is enable and started
+          become: true
+          ansible.builtin.systemd:
+            name: nginx
+            enabled: true
+            state: started
