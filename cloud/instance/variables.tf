@@ -4,6 +4,11 @@ variable "GCS_PROJECT" {
 }
 variable "GCS_REGION" {
   type        = string
-  description = "Google Cloud Services Region. Can be provided via environment."
+  description = "Google Cloud Services Region."
   default     = "us-west1"
+}
+variable "GCS_ZONE" {
+  type        = string
+  description = "Google Cloud Services Zone in the Region."
+  default     = "us-west1-a"
 }

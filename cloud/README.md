@@ -15,6 +15,7 @@ a Google Cloud k8s cluster and deploy the app to it.
   * `TF_VAR_GCS_PROJECT`: name of your GCS project
   * Optionally:
     * `TF_VAR_GCS_REGION`: region to work in for GCS (`us-west1` by default)
+    * `TF_VAR_GCS_ZONE`: zone in the region (`us-west1-a` by default)
 
 **Note:** Both Terraform definitions use local state storage. This is done for the
 purposes of this evaluation only --- for _any_ shared environment, the TF State should

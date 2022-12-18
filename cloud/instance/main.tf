@@ -17,4 +17,5 @@ provider "google" {
 
   project = var.GCS_PROJECT
   region  = var.GCS_REGION
+  zone    = var.GCS_ZONE
 }
