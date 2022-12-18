@@ -329,3 +329,14 @@
             src: /snap/bin/certbot
             state: link
             mode: 0755
+
+    - name: Install bat 0.20.0
+      become: true
+      ansible.builtin.apt:
+        deb: https://github.com/sharkdp/bat/releases/download/v0.20.0/bat_0.20.0_amd64.deb
+
+    - name: Install ripgrep
+      become: true
+      ansible.builtin.apt:
+        name: ripgrep
+        state: present
