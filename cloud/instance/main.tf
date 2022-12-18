@@ -15,9 +15,9 @@ terraform {
 provider "google" {
   credentials = file("../key.json")
 
-  project = var.GCS_PROJECT
-  region  = var.GCS_REGION
-  zone    = var.GCS_ZONE
+  project = var.GCP_PROJECT
+  region  = var.GCP_REGION
+  zone    = var.GCP_ZONE
 }
 
 # Create our Compute instance
@@ -42,6 +42,6 @@ resource "google_compute_instance" "default" {
   }
 
   metadata = {
-    ssh-keys = var.GCS_SSH_KEYS
+    ssh-keys = var.GCP_SSH_KEYS
   }
 }

@@ -12,10 +12,10 @@ a Google Cloud k8s cluster and deploy the app to it.
   bullet 3 for instructions on exactly how to create that). The resultant JSON key
   should be stored in `cloud/gcp_key.json`, relative to the repository root.
 * The following environment variables set:
-  * `TF_VAR_GCS_PROJECT`: name of your GCS project
+  * `TF_VAR_GCP_PROJECT`: name of your GCP project
   * Optionally:
-    * `TF_VAR_GCS_REGION`: region to work in for GCS (`us-west1` by default)
-    * `TF_VAR_GCS_ZONE`: zone in the region (`us-west1-a` by default)
+    * `TF_VAR_GCP_REGION`: region to work in for GCP (`us-west1` by default)
+    * `TF_VAR_GCP_ZONE`: zone in the region (`us-west1-a` by default)
 
 **Note:** Both Terraform definitions use local state storage. This is done for the
 purposes of this evaluation only --- for _any_ shared environment, the TF State should
@@ -32,7 +32,7 @@ In addition to the common requirements listed above, this variant requires:
 
 * Your Google Cloud Project needs to have the Compute Engine API enabled.
 * Optional environment variables:
-  * `TF_VAR_GCS_SSH_KEYS`: SSH key metadata string (see [GCS
+  * `TF_VAR_GCP_SSH_KEYS`: SSH key metadata string (see [GCP
     Documentation](https://cloud.google.com/compute/docs/metadata/default-metadata-values#project-attributes-metadata)
     for details; defaults to my SSH key.)
 
