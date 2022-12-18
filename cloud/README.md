@@ -31,6 +31,10 @@ which can then be used to deploy the Ansible Component on, or for general develo
 In addition to the common requirements listed above, this variant requires:
 
 * Your Google Cloud Project needs to have the Compute Engine API enabled.
+* Optional environment variables:
+  * `TF_VAR_GCS_SSH_KEYS`: SSH key metadata string (see [GCS
+    Documentation](https://cloud.google.com/compute/docs/metadata/default-metadata-values#project-attributes-metadata)
+    for details; defaults to my SSH key.)
 
 ### Usage
 

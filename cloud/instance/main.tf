@@ -40,4 +40,8 @@ resource "google_compute_instance" "default" {
       network_tier = "PREMIUM"
     }
   }
+
+  metadata = {
+    ssh-keys = var.GCS_SSH_KEYS
+  }
 }

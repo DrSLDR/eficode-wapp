@@ -12,3 +12,8 @@ variable "GCS_ZONE" {
   description = "Google Cloud Services Zone in the Region."
   default     = "us-west1-a"
 }
+variable "GCS_SSH_KEYS" {
+  type        = string
+  description = "SSH keys metadata string to be injected into the VM."
+  default     = "sldr:ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIN0bTE1x66xFwFS+ctz7pyrTloTW8YQ704shLFmsdsVa"
+}
