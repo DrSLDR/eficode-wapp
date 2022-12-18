@@ -125,6 +125,15 @@
       notify:
         - Start UFW
 
+    - name: Check UFW status
+      become: true
+      ansible.builtin.command:
+        cmd: ufw status
+      register: ufw_status
+      changed_when: "'Status: inactive' in ufw_status.stdout"
+      notify:
+        - Start UFW
+
     - name: Sudo group block
       block: # Adapted from my "ensure_sudo_group" role. Can be used to create user groups allowing either passworded or non-password sudo. In this case, we only want passworded sudo access.
         - name: Check if a sudo group is already defined
