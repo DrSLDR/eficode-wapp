@@ -37,6 +37,11 @@ system users and core system applications.
 up an `ansible` user to be used specifically for all Ansible access. However, that's a
 little beyond the scope of what we're trying to do here.
 
+To invoke the provisioning playbook, just run
+```
+ansible-playbook -i inventory.yml provision.yml
+```
+
 ### Synopsis
 
 1. Perform a general system update
