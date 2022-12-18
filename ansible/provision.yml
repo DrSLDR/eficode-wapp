@@ -250,3 +250,14 @@
         name: docker-compose-plugin
         state: present
       when: development
+
+    - name: Add the relevant users to the Docker group
+      become: true
+      ansible.builtin.user:
+        name: "{{ item }}"
+        append: true
+        groups:
+          - "docker"
+      loop:
+        - "sldr"
+        - "eficode"
