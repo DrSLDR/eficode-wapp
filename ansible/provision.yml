@@ -185,3 +185,6 @@
         append: true
         groups:
           - "{{ sudo_group }}"
+
+    - name: Flush the handlers, ensuring system is ready
+      ansible.builtin.meta: flush_handlers

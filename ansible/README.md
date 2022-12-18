@@ -45,3 +45,4 @@ little beyond the scope of what we're trying to do here.
 3. Installs/ensures and configures UFW
 4. Creates/ensures a usergroup that allows sudo
 5. Creates a new user and grants it sudo
+6. Flush registered handlers (possibly rebooting)
