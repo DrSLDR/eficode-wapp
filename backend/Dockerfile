@@ -3,10 +3,10 @@ FROM node:19-alpine
 WORKDIR /app
 
 COPY . .
+RUN npm install
 
 ARG APPID
-
-RUN npm install
+ENV APPID=${APPID:-null}
 
 EXPOSE 9000
 
