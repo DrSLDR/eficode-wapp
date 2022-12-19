@@ -10,6 +10,8 @@ services:
         - wapp-backend
     ports:
       - "9000:9000"
+    volumes:
+      - "../backend/src:/app/src"
   frontend:
     build:
       context: ../frontend
@@ -17,3 +19,5 @@ services:
         - wapp-frontend
     ports:
       - "8000:8000"
+    volumes:
+      - "../frontend/src:/app/src"
