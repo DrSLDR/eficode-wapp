@@ -4,7 +4,7 @@ WORKDIR /app
 
 COPY . .
 
-ARG appId
+ARG APPID
 
 RUN npm install
 
