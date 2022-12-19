@@ -1,0 +1,342 @@
+- name: Provision the server
+  hosts: gcp
+
+  handlers:
+    - name: Reboot the server
+      ansible.builtin.reboot:
+
+    - name: Start UFW
+      become: true
+      ansible.builtin.expect:
+        command: ufw enable
+        responses:
+          "Proceed with operation": y
+
+    - name: Reload nginx
+      become: true
+      ansible.builtin.systemd:
+        name: nginx
+        state: reloaded
+
+  tasks:
+    - name: General system update
+      become: true
+      ansible.builtin.apt:
+        update_cache: true
+        upgrade: true
+      notify:
+        - Reboot the server
+
+    - name: Neofetch block
+      block: # Taken from my install_neofetch role. This is absolutely not necessary, but it wouldn't feel like "my" server without it.
+        - name: Ensure git is present
+          become: true
+          ansible.builtin.apt:
+            name: git
+            state: present
+
+        - name: Declare the neofetch files
+          ansible.builtin.set_fact:
+            neofetch_files:
+              - 20-neofetch
+
+        - name: Prepare directory for neofetch
+          become: true
+          ansible.builtin.file:
+            path: /opt/neofetch
+            state: directory
+            mode: 0755
+
+        - name: Get the Neofetch code
+          become: true
+          ansible.builtin.git:
+            dest: /opt/neofetch
+            repo: https://github.com/dylanaraps/neofetch.git
+            version: "7.1.0"
+            force: true
+
+        - name: Copy neofetch script
+          become: true
+          ansible.builtin.command:
+            chdir: /opt/neofetch
+            cmd: cp neofetch neofetch-cust
+            creates: /opt/neofetch/neofetch-cust
+
+        - name: Patch the 'title' function
+          become: true
+          ansible.builtin.lineinfile:
+            path: /opt/neofetch/neofetch-cust
+            search_string: "{{ item.search }}"
+            line: "{{ item.line }}"
+          loop:
+            - {
+                search: "    title=${title_color}${bold}${user}",
+                line: "    title=${title_color}${bold}${hostname}",
+              }
+            - {
+                search: "length=$((${",
+                line: '{% raw %}    length="$((${{ ''{#'' }}hostname}))"{% endraw %}',
+              }
+
+        - name: Link Neofetch into /usr/bin
+          become: true
+          ansible.builtin.file:
+            state: link
+            path: /usr/bin/neofetch
+            src: /opt/neofetch/neofetch-cust
+
+        - name: Enumerate current MOTD scripts
+          ansible.builtin.command:
+            cmd: ls /etc/update-motd.d
+          register: modt_scripts
+          changed_when: false
+
+        - name: Disable current motd script
+          become: true
+          ansible.builtin.file:
+            path: "/etc/update-motd.d/{{ item }}"
+            mode: 0644
+          loop: "{{ modt_scripts.stdout_lines | difference(neofetch_files) }}"
+
+        - name: Check if static MOTD is present
+          ansible.builtin.stat:
+            path: /etc/motd
+          register: static_motd
+
+        - name: Remove static MOTD
+          become: true
+          ansible.builtin.command:
+            cmd: mv /etc/motd /etc/motd.disabled
+          when: static_motd.stat.exists
+
+        - name: Install new MOTD script
+          become: true
+          ansible.builtin.copy:
+            src: files/{{ item }}
+            dest: /etc/update-motd.d/{{ item }}
+            mode: 0755
+          loop: "{{ neofetch_files }}"
+
+    - name: Ensure UFW is installed
+      become: true
+      ansible.builtin.apt:
+        name:
+          - ufw
+        state: present
+
+    - name: Set up UFW rules
+      become: true
+      ansible.builtin.command:
+        cmd: "ufw allow {{ item }}/tcp"
+      register: ufw_rules
+      changed_when: "'Skipping' not in ufw_rules.stdout"
+      loop:
+        - 22
+        - 80
+        - 443
+      notify:
+        - Start UFW
+
+    - name: Check UFW status
+      become: true
+      ansible.builtin.command:
+        cmd: ufw status
+      register: ufw_status
+      changed_when: "'Status: inactive' in ufw_status.stdout"
+      notify:
+        - Start UFW
+
+    - name: Sudo group block
+      block: # Adapted from my "ensure_sudo_group" role. Can be used to create user groups allowing either passworded or non-password sudo. In this case, we only want passworded sudo access.
+        - name: Check if a sudo group is already defined
+          become: true
+          ansible.builtin.shell:
+            cmd: cat /etc/sudoers | grep ^%sudo
+          changed_when: false
+          failed_when: false
+          register: deb_grep
+
+        - name: Sudo group does not exist
+          block:
+            - name: Create the group
+              become: true
+              ansible.builtin.group:
+                name: "sudo"
+                state: present
+                system: true
+
+            - name: Install the sudoers.d file
+              become: true
+              ansible.builtin.template:
+                dest: /etc/sudoers.d/090_ans-sudogroup
+                src: templates/sudoers
+                mode: 0440
+                validate: /usr/sbin/visudo -cf %s
+              vars:
+                group: "sudo"
+          when: not deb_grep.rc == 0
+
+        - name: Register the group name
+          ansible.builtin.set_fact:
+            sudo_group: "sudo"
+
+    - name: Create a user account for examination purposes
+      become: true
+      ansible.builtin.user:
+        name: "eficode"
+        state: present
+        password: "$6$CPcj9wyH/kerDPD.$bUP4nHJGKcDJP0le5TOm9vhXMzDFdJW92M381wDMmx7FA0x2obTDAX683Ly61s22ZTGKimXequRt5JTKsEAuB0"
+        # I'm aware that a hardcoded password hash like this causes security problems,
+        # but in this inscance, I'm willing to accept them. This server isn't intended
+        # to be long-lived.
+
+    - name: Grant sudoer rights
+      become: true
+      ansible.builtin.user:
+        name: "eficode"
+        append: true
+        groups:
+          - "{{ sudo_group }}"
+
+    - name: Flush the handlers, ensuring system is ready
+      ansible.builtin.meta: flush_handlers
+
+    - name: Docker block
+      block: # Taken from my install_docker role. Surprisingly common process, installing docker.
+        - name: Install Docker prerequisites
+          become: true
+          ansible.builtin.apt:
+            name:
+              - ca-certificates
+              - curl
+              - gnupg
+              - lsb-release
+            state: present
+            update_cache: true
+
+        - name: Fetch the key
+          ansible.builtin.uri:
+            url: https://download.docker.com/linux/ubuntu/gpg
+            return_content: true
+          register: keydata
+
+        - name: Install Docker GPG key
+          become: true
+          ansible.builtin.shell:
+            cmd: >-
+              echo '{{ keydata.content }}' |
+              gpg --dearmor -o /usr/share/keyrings/docker-archive-keyring.gpg
+            creates: /usr/share/keyrings/docker-archive-keyring.gpg
+
+        - name: Install Docker Apt list
+          become: true
+          ansible.builtin.shell:
+            cmd: >-
+              echo
+              "deb [arch=$(dpkg --print-architecture)
+              signed-by=/usr/share/keyrings/docker-archive-keyring.gpg]
+              https://download.docker.com/linux/ubuntu
+              $(lsb_release -cs) stable" |
+              tee /etc/apt/sources.list.d/docker.list > /dev/null
+            creates: /etc/apt/sources.list.d/docker.list
+
+        - name: Install the Docker engine
+          become: true
+          ansible.builtin.apt:
+            name:
+              - docker-ce
+              - docker-ce-cli
+              - containerd.io
+            state: present
+            update_cache: true
+
+    - name: Install Docker Compose if we're doing development
+      become: true
+      ansible.builtin.apt:
+        name: docker-compose-plugin
+        state: present
+      when: development
+
+    - name: Add the relevant users to the Docker group
+      become: true
+      ansible.builtin.user:
+        name: "{{ item }}"
+        append: true
+        groups:
+          - "docker"
+      loop:
+        - "sldr"
+        - "eficode"
+
+    - name: Nginx block
+      block: # Taken from my install_nginx role. Also a very common task. Normally, whether to disable the default site is an option - here I hardcode it to yes.
+        - name: Install nginx
+          become: true
+          ansible.builtin.apt:
+            name: nginx
+            state: present
+
+        - name: Disable default site
+          become: true
+          ansible.builtin.file:
+            path: /etc/nginx/sites-enabled/default
+            state: absent
+          notify:
+            - Reload nginx
+
+        - name: Ensure nginx is enable and started
+          become: true
+          ansible.builtin.systemd:
+            name: nginx
+            enabled: true
+            state: started
+
+    - name: Snap block
+      block: # Taken from my install_snap role, prerequisite for installing certbot
+        - name: Install snapd
+          become: true
+          ansible.builtin.apt:
+            name: snapd
+            state: present
+
+        - name: Install the Snap Core
+          become: true
+          ansible.builtin.command:
+            cmd: snap install core
+          register: snap_core_install
+          changed_when: '"already installed" not in snap_core_install.stderr'
+
+        - name: Refresh the Snap Core
+          become: true
+          ansible.builtin.command:
+            cmd: snap refresh core
+          register: snap_core_refresh
+          changed_when: '"no updates available" not in snap_core_refresh.stderr'
+
+    - name: Certbot block
+      block: # Taken from my install_certbot role
+        - name: Install certbot
+          become: true
+          ansible.builtin.command:
+            cmd: snap install --classic certbot
+          register: snap_certbot
+          changed_when: '"already installed" not in snap_certbot.stderr'
+
+        - name: Link out the certbot executable
+          become: true
+          ansible.builtin.file:
+            path: /usr/bin/certbot
+            src: /snap/bin/certbot
+            state: link
+            mode: 0755
+
+    - name: Install bat 0.20.0
+      become: true
+      ansible.builtin.apt:
+        deb: https://github.com/sharkdp/bat/releases/download/v0.20.0/bat_0.20.0_amd64.deb
+
+    - name: Install ripgrep
+      become: true
+      ansible.builtin.apt:
+        name: ripgrep
+        state: present

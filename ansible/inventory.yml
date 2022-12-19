@@ -1,0 +1,11 @@
+---
+all:
+  vars:
+    cert_email: admin@sldr.se
+    domain: wapp.efi.turbo.horse
+  children:
+    gcp:
+      hosts:
+        test-instance:
+          ansible_host: 35.233.173.198
+          development: true
