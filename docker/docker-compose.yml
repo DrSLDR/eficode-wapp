@@ -1,0 +1,19 @@
+---
+version: "3.9"
+services:
+  backend:
+    build:
+      context: ../backend
+      args:
+        APPID: ${OWM_API_KEY}
+      tags:
+        - wapp-backend
+    ports:
+      - "9000:9000"
+  frontend:
+    build:
+      context: ../frontend
+      tags:
+        - wapp-frontend
+    ports:
+      - "8000:8000"
