@@ -59,3 +59,18 @@ ansible-playbook -i inventory.yml provision.yml
 8. Installs nginx, for use as a proxy later
 9. Installs certbot
 10. Install administration tools
+
+
+## Deploy playbook
+
+The `deploy.yml` file contains a play which, given a server provisioned using the
+playbook above, installs the Docker Images needed to run the weather service, sets it up
+as a `systemd` service, starts it, adds an `nginx` proxy, and makes sure that has a TLS
+certificate (via Let's Encrypt).
+
+A couple of notes:
+* Firstly, the `docker-compose.yml` file, in `files/` is a slight modification from the
+  one used in the Docker component. Specifically, this does _not_ expose the source
+  files as volumes, and adds an environment variable to the Frontend image so that it
+  will call the API at a different URL. Specifically, it will use the same URL as the
+  Frontend, where the `/api` redirect gets handled by `nginx`.
