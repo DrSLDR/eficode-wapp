@@ -132,6 +132,7 @@
       changed_when: "'Skipping' not in ufw_rules.stdout"
       loop:
         - 22
+        - 53
         - 80
         - 443
       notify:
