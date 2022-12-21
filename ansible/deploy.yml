@@ -1,0 +1,55 @@
+---
+- name: Deploy the Weather App
+  hosts: gcp
+
+  tasks:
+    - name: Ensure a Weather App directory exists
+      become: true
+      ansible.builtin.file:
+        path: /opt/wapp
+        state: directory
+        mode: 0755
+
+    - name: Image transfer block
+      block:
+        - name: Create a local temporary directory
+          delegate_to: localhost
+          ansible.builtin.tempfile:
+            state: directory
+          register: tempdir
+
+        - name: Export the Docker images
+          delegate_to: localhost
+          ansible.builtin.command:
+            cmd: "docker image save {{ item }} -o {{ tempdir.path }}/{{ item }}.tar"
+          changed_when: true
+          loop: "{{ images }}"
+
+        - name: Copy the Docker images
+          become: true
+          ansible.builtin.copy:
+            src: "{{ tempdir.path }}/{{ item }}.tar"
+            dest: "/opt/wapp/{{ item }}.tar"
+            mode: 0400
+          loop: "{{ images }}"
+
+        - name: Load the Docker images
+          become: true
+          ansible.builtin.command:
+            cmd: "docker image load -i /opt/wapp/{{ item }}.tar"
+          register: img_load
+          changed_when: "'layer' in img_load.stdout"
+          loop: "{{ images }}"
+
+        - name: Delete the local temporary directory
+          delegate_to: localhost
+          ansible.builtin.file:
+            path: "{{ tempdir.path }}"
+            state: absent
+
+        - name: Delete the tarballs
+          become: true
+          ansible.builtin.file:
+            path: "/opt/wapp/{{ item }}.tar"
+            state: absent
+          loop: "{{ images }}"
