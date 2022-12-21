@@ -99,6 +99,13 @@
             state: absent
           loop: "{{ images }}"
 
+    - name: Template in the Docker Compose configuration
+      become: true
+      ansible.builtin.template:
+        src: templates/docker-compose.yml
+        dest: /opt/wapp/docker-compose.yml
+        mode: 0644
+
     - name: Ensure an nginx ghost directory exists
       # For the record: the point of the ghost directory is to have somewhere for
       # Ansible to put its nginx configuration files, which will then be copied to
