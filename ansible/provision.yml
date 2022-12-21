@@ -3,6 +3,7 @@
 
   handlers:
     - name: Reboot the server
+      become: true
       ansible.builtin.reboot:
 
     - name: Start UFW
