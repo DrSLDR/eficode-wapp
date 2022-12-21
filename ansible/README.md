@@ -79,6 +79,11 @@ A couple of notes:
   with those names will be exported, and the resulting tarball will be sent to the
   server.
 
+To invoke the deploy playbook, just run
+```
+ansible-playbook -i inventory.yml deploy.yml
+```
+
 ### Synopsis
 
 1. Prepare a directory where the Docker Compose file can live
