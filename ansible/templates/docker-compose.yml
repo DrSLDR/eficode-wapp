@@ -4,8 +4,6 @@ services:
   backend:
     build:
       context: ../backend
-      args:
-        APPID: ${OWM_API_KEY}
       tags:
         - wapp-backend
     ports:
