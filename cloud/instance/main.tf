@@ -52,6 +52,8 @@ resource "google_compute_firewall" "rules" {
   network     = "default"
   description = "Allows web traffic to web servers"
 
+  source_ranges = ["0.0.0.0/0"]
+
   allow {
     protocol = "tcp"
     ports    = ["80", "443", "8080", "1000-2000"]
