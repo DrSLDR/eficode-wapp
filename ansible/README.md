@@ -78,3 +78,13 @@ A couple of notes:
   images are build on the local machine** using the `docker/build.sh` script. Images
   with those names will be exported, and the resulting tarball will be sent to the
   server.
+
+### Synopsis
+
+1. Prepare a directory where the Docker Compose file can live
+2. Transfer the Docker images
+   1. [Localhost] Create a temporary directory and save out the images there
+   2. Copy the images to the host
+   3. Load the tarballs into Docker
+   4. [Localhost] Destroy the temporary directory
+   5. Destroy the tarballs
