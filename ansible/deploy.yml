@@ -3,6 +3,15 @@
   hosts: gcp
 
   handlers:
+    - name: Enable the Weather Service
+      become: true
+      ansible.builtin.systemd:
+        name: wapp.service
+        enabled: true
+        daemon_reload: true
+      notify:
+        - Restart the Weather Service
+
     - name: Copy the ghost configuration file
       become: true
       ansible.builtin.command:
@@ -46,6 +55,12 @@
       ansible.builtin.systemd:
         name: nginx
         state: reloaded
+
+    - name: Restart the Weather Service
+      become: true
+      ansible.builtin.systemd:
+        name: wapp.service
+        state: restarted
 
   tasks:
     - name: Ensure a Weather App directory exists
@@ -173,3 +188,13 @@
         - Ensure target DNS is resolvable
         - Invoke certbot
         - Reload nginx
+
+    - name: Install in the Weather App service
+      become: true
+      ansible.builtin.copy:
+        src: files/wapp.service
+        dest: /etc/systemd/system/wapp.service
+        mode: 0644
+      notify:
+        - Enable the Weather Service
+        - Restart the Weather Service

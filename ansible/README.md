@@ -95,3 +95,4 @@ ansible-playbook -i inventory.yml deploy.yml
    5. Destroy the tarballs
 3. Copy over the Docker Compose file
 4. Install the nginx proxy
+5. Install and enable the Weather App systemd service
