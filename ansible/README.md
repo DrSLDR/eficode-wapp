@@ -53,12 +53,11 @@ ansible-playbook -i inventory.yml provision.yml
 4. Creates/ensures a usergroup that allows sudo
 5. Creates a new user and grants it sudo
 6. Flush registered handlers (possibly rebooting)
-7. Installs Docker
-   1. Optionally also installs Docker Compose
-   2. Adds our users to the Docker group
-8. Installs nginx, for use as a proxy later
-9. Installs certbot
-10. Install administration tools
+7. Installs Docker & Docker Compose
+8. Adds our users to the Docker group
+9. Installs nginx, for use as a proxy later
+10. Installs certbot
+11. Install administration tools
 
 
 ## Deploy playbook

@@ -250,12 +250,11 @@
             state: present
             update_cache: true
 
-    - name: Install Docker Compose if we're doing development
+    - name: Install Docker Compose
       become: true
       ansible.builtin.apt:
         name: docker-compose-plugin
         state: present
-      when: development
 
     - name: Add the relevant users to the Docker group
       become: true
