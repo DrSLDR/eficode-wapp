@@ -55,6 +55,45 @@
         state: directory
         mode: 0755
 
+    - name: Get our local Docker image hashes
+      delegate_to: localhost
+      ansible.builtin.command:
+        cmd: "docker image inspect {{ item }} -f '{{ '{{' }}.Id{{ '}}' }}'"
+      changed_when: false
+      register: local_img
+      loop: "{{ images }}"
+
+    - name: Get remote docker image hashes
+      ansible.builtin.command:
+        cmd: "docker image inspect {{ item }} -f '{{ '{{' }}.Id{{ '}}' }}'"
+      changed_when: false
+      failed_when: false
+      register: remote_img
+      loop: "{{ images }}"
+
+    - name: Register images that have to be transfered
+      ansible.builtin.set_fact:
+        l_images: >-
+          {{ local_img.results |
+            items2dict(key_name='stdout', value_name='item') }}
+        r_images: >-
+          {{ remote_img.results |
+            rejectattr("rc", "ne", 0) |
+            items2dict(key_name='stdout', value_name='item') }}
+
+    - name: Register images that have to be transfered, part two
+      ansible.builtin.set_fact:
+        t_images: >-
+          {{ (l_images |
+              dict2items |
+              map(attribute='value') |
+              list) |
+            difference(l_images |
+              dict2items |
+              map(attribute='key') |
+              map('extract', r_images) |
+              list) }}
+
     - name: Image transfer block
       block:
         - name: Create a local temporary directory
@@ -68,7 +107,7 @@
           ansible.builtin.command:
             cmd: "docker image save {{ item }} -o {{ tempdir.path }}/{{ item }}.tar"
           changed_when: true
-          loop: "{{ images }}"
+          loop: "{{ t_images }}"
 
         - name: Copy the Docker images
           become: true
@@ -76,7 +115,7 @@
             src: "{{ tempdir.path }}/{{ item }}.tar"
             dest: "/opt/wapp/{{ item }}.tar"
             mode: 0400
-          loop: "{{ images }}"
+          loop: "{{ t_images }}"
 
         - name: Load the Docker images
           become: true
@@ -84,7 +123,7 @@
             cmd: "docker image load -i /opt/wapp/{{ item }}.tar"
           register: img_load
           changed_when: "'layer' in img_load.stdout"
-          loop: "{{ images }}"
+          loop: "{{ t_images }}"
 
         - name: Delete the local temporary directory
           delegate_to: localhost
@@ -97,7 +136,8 @@
           ansible.builtin.file:
             path: "/opt/wapp/{{ item }}.tar"
             state: absent
-          loop: "{{ images }}"
+          loop: "{{ t_images }}"
+      when: "(t_images | length) > 0"
 
     - name: Template in the Docker Compose configuration
       become: true
