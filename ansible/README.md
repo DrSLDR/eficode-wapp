@@ -72,7 +72,8 @@ A couple of notes:
   one used in the Docker component. Specifically, this does _not_ expose the source
   files as volumes, and adds an environment variable to the Frontend image so that it
   will call the API at a different URL. Specifically, it will use the same URL as the
-  Frontend, where the `/api` redirect gets handled by `nginx`.
+  Frontend, where the `/api` redirect gets handled by `nginx`. Moreover, Docker Compose
+  no longer builds the images, merely starts them.
 * We are not assuming any Docker registry will be available to pull our images from, nor
   do we want to build them on-server. Consequently **this playbook requires the Docker
   images are build on the local machine** using the `docker/build.sh` script. Images
