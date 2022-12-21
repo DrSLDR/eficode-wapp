@@ -2,6 +2,51 @@
 - name: Deploy the Weather App
   hosts: gcp
 
+  handlers:
+    - name: Copy the ghost configuration file
+      become: true
+      ansible.builtin.command:
+        cmd: >-
+          cp /etc/nginx/sites-ghost/{{ domain }}
+          /etc/nginx/sites-available/
+
+    - name: Enable the configuration file
+      become: true
+      ansible.builtin.file:
+        state: link
+        src: "/etc/nginx/sites-available/{{ domain }}"
+        dest: "/etc/nginx/sites-enabled/{{ domain }}"
+
+    - name: Ensure target DNS is resolvable
+      ansible.builtin.command:
+        cmd: "ping -c 4 {{ domain }}"
+      register: ping
+      until: ping.rc == 0
+      retries: 12
+      delay: 10
+      changed_when: false
+
+    - name: Invoke certbot
+      become: true
+      ansible.builtin.command:
+        cmd: >-
+          certbot --nginx
+                  --noninteractive
+                  --domain {{ ghost.d_item.fqdn }}
+                  --agree-tos
+                  --test-cert
+                  --email {{ cert_email }}
+      register: certbot_call
+      until: certbot_call.rc == 0
+      retries: 12
+      delay: 30
+
+    - name: Reload nginx
+      become: true
+      ansible.builtin.systemd:
+        name: nginx
+        state: reloaded
+
   tasks:
     - name: Ensure a Weather App directory exists
       become: true
@@ -53,3 +98,31 @@
             path: "/opt/wapp/{{ item }}.tar"
             state: absent
           loop: "{{ images }}"
+
+    - name: Ensure an nginx ghost directory exists
+      # For the record: the point of the ghost directory is to have somewhere for
+      # Ansible to put its nginx configuration files, which will then be copied to
+      # sites-available via a handler (ergo, only when it has changed). The reason for
+      # not templating directly into sites-available is because certbot will overwrite
+      # the file contents in that file, which Ansible will then overwrite again the next
+      # time it runs, prompting the need for certbot to be run again. This way, we only
+      # need to re-run certbot when the nginx configuration actually changes, rather
+      # than every time Ansible runs.
+      become: true
+      ansible.builtin.file:
+        path: /etc/nginx/sites-ghost
+        state: directory
+        mode: 0755
+
+    - name: Template in the nginx proxy file
+      become: true
+      ansible.builtin.template:
+        src: templates/nginx-proxy.cfg
+        dest: "/etc/nginx/sites-ghost/{{ domain }}"
+        mode: 0644
+      notify:
+        - Copy the ghost configuration file
+        - Enable the configuration file
+        - Ensure target DNS is resolvable
+        - Invoke certbot
+        - Reload nginx

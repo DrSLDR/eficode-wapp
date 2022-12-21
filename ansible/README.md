@@ -88,3 +88,4 @@ A couple of notes:
    3. Load the tarballs into Docker
    4. [Localhost] Destroy the temporary directory
    5. Destroy the tarballs
+3. Install the nginx proxy
