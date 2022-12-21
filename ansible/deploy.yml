@@ -99,15 +99,17 @@
     - name: Register images that have to be transfered, part two
       ansible.builtin.set_fact:
         t_images: >-
-          {{ (l_images |
-              dict2items |
-              map(attribute='value') |
-              list) |
-            difference(l_images |
+          {{
+            ((l_images |
               dict2items |
               map(attribute='key') |
-              map('extract', r_images) |
-              list) }}
+              list) |
+            difference(r_images |
+              dict2items |
+              map(attribute='key') |
+              list)) |
+            map('extract', l_images) | list
+          }}
 
     - name: Image transfer block
       block:
