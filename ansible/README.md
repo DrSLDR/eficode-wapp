@@ -74,3 +74,8 @@ A couple of notes:
   files as volumes, and adds an environment variable to the Frontend image so that it
   will call the API at a different URL. Specifically, it will use the same URL as the
   Frontend, where the `/api` redirect gets handled by `nginx`.
+* We are not assuming any Docker registry will be available to pull our images from, nor
+  do we want to build them on-server. Consequently **this playbook requires the Docker
+  images are build on the local machine** using the `docker/build.sh` script. Images
+  with those names will be exported, and the resulting tarball will be sent to the
+  server.
