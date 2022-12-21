@@ -32,7 +32,7 @@
         cmd: >-
           certbot --nginx
                   --noninteractive
-                  --domain {{ ghost.d_item.fqdn }}
+                  --domain {{ domain }}
                   --agree-tos
                   --test-cert
                   --email {{ cert_email }}
