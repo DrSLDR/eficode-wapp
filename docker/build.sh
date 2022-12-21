@@ -8,7 +8,7 @@ fi
 echo "Building the backend..."
 
 pushd ../backend
-docker build -t wapp-backend --build-arg appId=${OWM_API_KEY} .
+docker build -t wapp-backend --build-arg APPID=${OWM_API_KEY} .
 popd
 
 echo "Done. Building the frontend..."
