@@ -43,7 +43,6 @@
                   --noninteractive
                   --domain {{ domain }}
                   --agree-tos
-                  --test-cert
                   --email {{ cert_email }}
       register: certbot_call
       until: certbot_call.rc == 0
