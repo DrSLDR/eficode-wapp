@@ -13,7 +13,7 @@ terraform {
 
 # Define the Google provider
 provider "google" {
-  credentials = file("../key.json")
+  credentials = file("key.json")
 
   project = var.GCP_PROJECT
   region  = var.GCP_REGION
