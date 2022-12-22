@@ -1,0 +1,21 @@
+[Unit]
+Description=Eficode Weather App Evaluation App for Evaluation
+After=docker.service
+Requires=docker.service
+
+[Service]
+Type=oneshot
+Restart=on-failure
+RemainAfterExit=yes
+RestartSec=2
+StartLimitBurst=3
+StartLimitInterval=60s
+User=root
+Group=docker
+WorkingDirectory=/opt/wapp
+ExecStart=/usr/bin/docker compose up -d --remove-orphans
+ExecReload=/usr/bin/docker compose up -d --remove-orphans
+ExecStop=/usr/bin/docker compose down
+
+[Install]
+WantedBy=multi-user.target

@@ -53,9 +53,47 @@ ansible-playbook -i inventory.yml provision.yml
 4. Creates/ensures a usergroup that allows sudo
 5. Creates a new user and grants it sudo
 6. Flush registered handlers (possibly rebooting)
-7. Installs Docker
-   1. Optionally also installs Docker Compose
-   2. Adds our users to the Docker group
-8. Installs nginx, for use as a proxy later
-9. Installs certbot
-10. Install administration tools
+7. Installs Docker & Docker Compose
+8. Adds our users to the Docker group
+9. Installs nginx, for use as a proxy later
+10. Installs certbot
+11. Install administration tools
+
+
+## Deploy playbook
+
+The `deploy.yml` file contains a play which, given a server provisioned using the
+playbook above, installs the Docker Images needed to run the weather service, sets it up
+as a `systemd` service, starts it, adds an `nginx` proxy, and makes sure that has a TLS
+certificate (via Let's Encrypt).
+
+A couple of notes:
+* Firstly, the `docker-compose.yml` file, in `files/` is a slight modification from the
+  one used in the Docker component. Specifically, this does _not_ expose the source
+  files as volumes, and adds an environment variable to the Frontend image so that it
+  will call the API at a different URL. Specifically, it will use the same URL as the
+  Frontend, where the `/api` redirect gets handled by `nginx`. Moreover, Docker Compose
+  no longer builds the images, merely starts them.
+* We are not assuming any Docker registry will be available to pull our images from, nor
+  do we want to build them on-server. Consequently **this playbook requires the Docker
+  images are build on the local machine** using the `docker/build.sh` script. Images
+  with those names will be exported, and the resulting tarball will be sent to the
+  server.
+
+To invoke the deploy playbook, just run
+```
+ansible-playbook -i inventory.yml deploy.yml
+```
+
+### Synopsis
+
+1. Prepare a directory where the Docker Compose file can live
+2. Transfer the Docker images
+   1. [Localhost] Create a temporary directory and save out the images there
+   2. Copy the images to the host
+   3. Load the tarballs into Docker
+   4. [Localhost] Destroy the temporary directory
+   5. Destroy the tarballs
+3. Copy over the Docker Compose file
+4. Install the nginx proxy
+5. Install and enable the Weather App systemd service

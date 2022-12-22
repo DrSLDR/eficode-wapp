@@ -1,0 +1,201 @@
+---
+- name: Deploy the Weather App
+  hosts: gcp
+
+  handlers:
+    - name: Enable the Weather Service
+      become: true
+      ansible.builtin.systemd:
+        name: wapp.service
+        enabled: true
+        daemon_reload: true
+      notify:
+        - Restart the Weather Service
+
+    - name: Copy the ghost configuration file
+      become: true
+      ansible.builtin.command:
+        cmd: >-
+          cp /etc/nginx/sites-ghost/{{ domain }}
+          /etc/nginx/sites-available/
+
+    - name: Enable the configuration file
+      become: true
+      ansible.builtin.file:
+        state: link
+        src: "/etc/nginx/sites-available/{{ domain }}"
+        dest: "/etc/nginx/sites-enabled/{{ domain }}"
+
+    - name: Ensure target DNS is resolvable
+      ansible.builtin.command:
+        cmd: "ping -c 4 {{ domain }}"
+      register: ping
+      until: ping.rc == 0
+      retries: 12
+      delay: 10
+      changed_when: false
+
+    - name: Invoke certbot
+      become: true
+      ansible.builtin.command:
+        cmd: >-
+          certbot --nginx
+                  --noninteractive
+                  --domain {{ domain }}
+                  --agree-tos
+                  --email {{ cert_email }}
+      register: certbot_call
+      until: certbot_call.rc == 0
+      retries: 12
+      delay: 30
+
+    - name: Reload nginx
+      become: true
+      ansible.builtin.systemd:
+        name: nginx
+        state: reloaded
+
+    - name: Restart the Weather Service
+      become: true
+      ansible.builtin.systemd:
+        name: wapp.service
+        state: restarted
+
+  tasks:
+    - name: Ensure a Weather App directory exists
+      become: true
+      ansible.builtin.file:
+        path: /opt/wapp
+        state: directory
+        mode: 0755
+
+    - name: Get our local Docker image hashes
+      delegate_to: localhost
+      ansible.builtin.command:
+        cmd: "docker image inspect {{ item }} -f '{{ '{{' }}.Id{{ '}}' }}'"
+      changed_when: false
+      register: local_img
+      loop: "{{ images }}"
+
+    - name: Get remote docker image hashes
+      ansible.builtin.command:
+        cmd: "docker image inspect {{ item }} -f '{{ '{{' }}.Id{{ '}}' }}'"
+      changed_when: false
+      failed_when: false
+      register: remote_img
+      loop: "{{ images }}"
+
+    - name: Register images that have to be transfered
+      ansible.builtin.set_fact:
+        l_images: >-
+          {{ local_img.results |
+            items2dict(key_name='stdout', value_name='item') }}
+        r_images: >-
+          {{ remote_img.results |
+            rejectattr("rc", "ne", 0) |
+            items2dict(key_name='stdout', value_name='item') }}
+
+    - name: Register images that have to be transfered, part two
+      ansible.builtin.set_fact:
+        t_images: >-
+          {{
+            ((l_images |
+              dict2items |
+              map(attribute='key') |
+              list) |
+            difference(r_images |
+              dict2items |
+              map(attribute='key') |
+              list)) |
+            map('extract', l_images) | list
+          }}
+
+    - name: Image transfer block
+      block:
+        - name: Create a local temporary directory
+          delegate_to: localhost
+          ansible.builtin.tempfile:
+            state: directory
+          register: tempdir
+
+        - name: Export the Docker images
+          delegate_to: localhost
+          ansible.builtin.command:
+            cmd: "docker image save {{ item }} -o {{ tempdir.path }}/{{ item }}.tar"
+          changed_when: true
+          loop: "{{ t_images }}"
+
+        - name: Copy the Docker images
+          become: true
+          ansible.builtin.copy:
+            src: "{{ tempdir.path }}/{{ item }}.tar"
+            dest: "/opt/wapp/{{ item }}.tar"
+            mode: 0400
+          loop: "{{ t_images }}"
+
+        - name: Load the Docker images
+          become: true
+          ansible.builtin.command:
+            cmd: "docker image load -i /opt/wapp/{{ item }}.tar"
+          register: img_load
+          changed_when: "'layer' in img_load.stdout"
+          loop: "{{ t_images }}"
+
+        - name: Delete the local temporary directory
+          delegate_to: localhost
+          ansible.builtin.file:
+            path: "{{ tempdir.path }}"
+            state: absent
+
+        - name: Delete the tarballs
+          become: true
+          ansible.builtin.file:
+            path: "/opt/wapp/{{ item }}.tar"
+            state: absent
+          loop: "{{ t_images }}"
+      when: "(t_images | length) > 0"
+
+    - name: Template in the Docker Compose configuration
+      become: true
+      ansible.builtin.template:
+        src: templates/docker-compose.yml
+        dest: /opt/wapp/docker-compose.yml
+        mode: 0644
+
+    - name: Ensure an nginx ghost directory exists
+      # For the record: the point of the ghost directory is to have somewhere for
+      # Ansible to put its nginx configuration files, which will then be copied to
+      # sites-available via a handler (ergo, only when it has changed). The reason for
+      # not templating directly into sites-available is because certbot will overwrite
+      # the file contents in that file, which Ansible will then overwrite again the next
+      # time it runs, prompting the need for certbot to be run again. This way, we only
+      # need to re-run certbot when the nginx configuration actually changes, rather
+      # than every time Ansible runs.
+      become: true
+      ansible.builtin.file:
+        path: /etc/nginx/sites-ghost
+        state: directory
+        mode: 0755
+
+    - name: Template in the nginx proxy file
+      become: true
+      ansible.builtin.template:
+        src: templates/nginx-proxy.cfg
+        dest: "/etc/nginx/sites-ghost/{{ domain }}"
+        mode: 0644
+      notify:
+        - Copy the ghost configuration file
+        - Enable the configuration file
+        - Ensure target DNS is resolvable
+        - Invoke certbot
+        - Reload nginx
+
+    - name: Install in the Weather App service
+      become: true
+      ansible.builtin.copy:
+        src: files/wapp.service
+        dest: /etc/systemd/system/wapp.service
+        mode: 0644
+      notify:
+        - Enable the Weather Service
+        - Restart the Weather Service
