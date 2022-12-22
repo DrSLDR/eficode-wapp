@@ -9,7 +9,7 @@ configured using the Ansible Component.
 * A Google Cloud Project and associated service account (see [this
   documentation](https://developer.hashicorp.com/terraform/tutorials/gcp-get-started/google-cloud-platform-build#set-up-gcp),
   bullet 3 for instructions on exactly how to create that). The resultant JSON key
-  should be stored in `cloud/gcp_key.json`, relative to the repository root.
+  should be stored in `cloud/key.json`, relative to the repository root.
 * Your Google Cloud Project needs to have the Compute Engine API enabled.
 * The following environment variables set:
   * `TF_VAR_GCP_PROJECT`: name of your GCP project
